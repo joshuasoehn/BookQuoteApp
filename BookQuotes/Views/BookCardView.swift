@@ -26,31 +26,41 @@ struct BookCardView: View {
     
     var body: some View {
         Button(action: onTap) {
-            HStack(spacing: 10) {
+            HStack(spacing: 12) {
                 // Book cover placeholder (always visible)
                 BookCoverView(title: book.title)
+                    .opacity(isSelected ? 1 : 0.5)
                 
-                // Title and author (only visible when selected)
-                if isSelected {
-                    VStack(alignment: .leading, spacing: 4) {
-                        Text(book.title)
-                            .font(.subheadline)
-                            .fontWeight(.semibold)
-                            .lineLimit(2)
-                            .multilineTextAlignment(.leading)
-                        
-                        Text(book.author)
-                            .font(.caption)
-                            .foregroundColor(.secondary)
-                            .lineLimit(1)
-                    }
-                    .frame(maxWidth: 100, alignment: .leading)
+                // Title and author (always visible, but faded when not selected)
+                VStack(alignment: .leading, spacing: 2) {
+                    Text(book.title)
+                        .font(.system(size: 16, weight: .semibold))
+                        .lineLimit(3)
+                        .multilineTextAlignment(.leading)
+                        .foregroundColor(Color(hex: "111111"))
+                    
+                    Text(book.author)
+                        .font(.system(size: 16))
+                        .foregroundColor(Color(hex: "333333"))
+                        .lineLimit(1)
                 }
+                .frame(maxWidth: 160, alignment: .leading)
+                .opacity(isSelected ? 1 : 0.5)
             }
-            .padding(8)
-            .background(
-                RoundedRectangle(cornerRadius: 12)
-                    .fill(isSelected ? Color(.systemGray5) : Color.clear)
+            .padding(12)
+            .frame(height: 110)
+            .background(Color.white)
+            .cornerRadius(16)
+            .overlay(
+                RoundedRectangle(cornerRadius: 16)
+                    .stroke(Color.black.opacity(isSelected ? 0.1 : 0.05), lineWidth: 1)
+            )
+            // Drop shadow only on selected state
+            .shadow(
+                color: isSelected ? Color.black.opacity(0.1) : Color.clear,
+                radius: 10,
+                x: 0,
+                y: 2
             )
         }
         .buttonStyle(.plain)
@@ -121,6 +131,7 @@ struct BookCoverView: View {
         onTap: { }
     )
     .padding()
+    .background(Color(.systemGray6))
 }
 
 #Preview("Unselected") {
@@ -132,6 +143,24 @@ struct BookCoverView: View {
         onTap: { }
     )
     .padding()
+    .background(Color(.systemGray6))
+}
+
+#Preview("Both States") {
+    HStack(spacing: 12) {
+        BookCardView(
+            book: Book(title: "Ways of Being: Animals, Plants, Machines", author: "James Bridle"),
+            isSelected: true,
+            onTap: { }
+        )
+        BookCardView(
+            book: Book(title: "1984", author: "George Orwell"),
+            isSelected: false,
+            onTap: { }
+        )
+    }
+    .padding()
+    .background(Color(.systemGray6))
 }
 
 #Preview("Cover Colors") {

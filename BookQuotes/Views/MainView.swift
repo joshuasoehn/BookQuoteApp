@@ -75,16 +75,29 @@ struct MainView: View {
                             Image(systemName: "camera.fill")
                             Text("Add Quote")
                         }
-                        .font(.headline)
-                        .padding(.horizontal, 20)
-                        .padding(.vertical, 12)
-                        .background(Color.accentColor)
-                        .foregroundColor(.white)
+                        .font(.system(size: 16, weight: .semibold))
+                        .foregroundColor(Color(hex: "111111"))
+                        .padding(.horizontal, 24)
+                        .padding(.vertical, 16)
+                        .background(
+                            // Liquid glass effect with white tint
+                            Capsule()
+                                .fill(.ultraThinMaterial)
+                                .background(
+                                    Capsule()
+                                        .fill(Color.white.opacity(0.9))
+                                )
+                        )
                         .clipShape(Capsule())
-                        .shadow(color: .black.opacity(0.2), radius: 4, x: 0, y: 2)
+                        // Stronger drop shadow
+                        .shadow(color: .black.opacity(0.15), radius: 20, x: 0, y: 8)
+                        .shadow(color: .black.opacity(0.1), radius: 6, x: 0, y: 2)
                     }
-                    .padding(.bottom, 30)
+                    .buttonStyle(SubtlePressButtonStyle())
+                    // Position near bottom where tab bar usually is
+                    .padding(.bottom, 16)
                 }
+                .ignoresSafeArea(.keyboard, edges: .bottom)
             }
         }
         // Auto-select the first book when the view appears
@@ -122,6 +135,18 @@ struct MainView: View {
         withAnimation {
             modelContext.delete(quote)
         }
+    }
+}
+
+// MARK: - Subtle Press Button Style
+
+/// A button style with a subtle press effect (less opacity change than default)
+struct SubtlePressButtonStyle: ButtonStyle {
+    func makeBody(configuration: Configuration) -> some View {
+        configuration.label
+            .opacity(configuration.isPressed ? 0.9 : 1.0)
+            .scaleEffect(configuration.isPressed ? 0.98 : 1.0)
+            .animation(.easeInOut(duration: 0.15), value: configuration.isPressed)
     }
 }
 

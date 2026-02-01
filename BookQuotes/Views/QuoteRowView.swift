@@ -19,11 +19,12 @@ struct QuoteRowView: View {
     
     var body: some View {
         VStack(alignment: .leading, spacing: 8) {
-            // Quote text with underline styling
+            // Quote text with grey underline styling
             Text(quote.text)
-                .font(.body)
-                .underline()
-                .foregroundColor(.primary)
+                .font(.system(size: 18))
+                .lineSpacing(5) // Approximate line-height: 1.5
+                .underline(true, color: Color(hex: "CCCCCC")) // Grey underline
+                .foregroundColor(Color(hex: "111111"))
             
             // Optional page number
             if let pageNumber = quote.pageNumber {
@@ -32,9 +33,18 @@ struct QuoteRowView: View {
                     .foregroundColor(.secondary)
             }
         }
-        .padding(.vertical, 4)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .padding(24) // 24pt padding on all sides
+        .overlay(
+            // Bottom border
+            Rectangle()
+                .fill(Color.black.opacity(0.05))
+                .frame(height: 1),
+            alignment: .bottom
+        )
     }
 }
+
 
 // MARK: - Previews
 

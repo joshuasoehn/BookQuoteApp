@@ -54,6 +54,9 @@ struct QuotesListView: View {
                 List {
                     ForEach(sortedQuotes) { quote in
                         QuoteRowView(quote: quote)
+                            // Remove default list row padding/insets
+                            .listRowInsets(EdgeInsets())
+                            .listRowSeparator(.hidden)
                             // Swipe RIGHT to edit
                             .swipeActions(edge: .leading, allowsFullSwipe: true) {
                                 Button {

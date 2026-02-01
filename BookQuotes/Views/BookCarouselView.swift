@@ -43,7 +43,7 @@ struct BookCarouselView: View {
                 }
             }
             .padding(.horizontal, 16)
-            .padding(.vertical, 12)
+            .padding(.vertical, 16)
         }
         .background(Color(.systemBackground))
     }
@@ -51,24 +51,24 @@ struct BookCarouselView: View {
 
 // MARK: - Add Book Button
 
-/// A dashed-border button for adding a new book.
+/// A button for adding a new book, styled to match the book cards.
 struct AddBookButton: View {
     let action: () -> Void
     
     var body: some View {
         Button(action: action) {
             VStack {
-                Image(systemName: "plus")
-                    .font(.title2)
-                    .fontWeight(.semibold)
+                // Document icon (SF Symbol for adding a book)
+                Image(systemName: "book.pages")
+                    .font(.system(size: 20, weight: .semibold))
+                    .foregroundColor(Color(hex: "111111"))
             }
-            .frame(width: 60, height: 90)
-            .background(Color(.systemGray6))
-            .cornerRadius(8)
+            .frame(width: 64, height: 110)
+            .background(Color.white)
+            .cornerRadius(16)
             .overlay(
-                RoundedRectangle(cornerRadius: 8)
-                    .strokeBorder(style: StrokeStyle(lineWidth: 2, dash: [6]))
-                    .foregroundColor(.gray)
+                RoundedRectangle(cornerRadius: 16)
+                    .stroke(Color.black.opacity(0.1), lineWidth: 1)
             )
         }
         .buttonStyle(.plain)
@@ -90,4 +90,5 @@ struct AddBookButton: View {
         selectedBook: .constant(sampleBooks[0]),
         onAddBook: { print("Add book tapped") }
     )
+    .background(Color(.systemGray6))
 }
