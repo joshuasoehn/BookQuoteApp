@@ -8,12 +8,20 @@
 import SwiftUI
 import SwiftData
 
+/// The main entry point for the BookQuotes app.
+/// Sets up SwiftData with our Book and Quote models.
 @main
 struct BookQuotesApp: App {
+    /// The shared model container that manages our SwiftData storage.
+    /// This container holds both Book and Quote models.
     var sharedModelContainer: ModelContainer = {
+        // Define the schema with our data models
         let schema = Schema([
-            Item.self,
+            Book.self,
+            Quote.self,
         ])
+        
+        // Configure the model storage (persisted to disk, not in-memory)
         let modelConfiguration = ModelConfiguration(schema: schema, isStoredInMemoryOnly: false)
 
         do {
@@ -25,8 +33,10 @@ struct BookQuotesApp: App {
 
     var body: some Scene {
         WindowGroup {
-            ContentView()
+            // MainView is our single-screen app interface
+            MainView()
         }
+        // Inject the model container so all views can access SwiftData
         .modelContainer(sharedModelContainer)
     }
 }
