@@ -121,8 +121,8 @@ struct AddQuoteSheet: View {
                     cameraSection
                 }
                 
-                // Manual entry mode OR editing extracted text
-                if inputMode == .manual || (inputMode == .camera && !quoteText.isEmpty) {
+                // Manual entry mode OR editing extracted text (show after image is processed)
+                if inputMode == .manual || (inputMode == .camera && selectedImage != nil && !isProcessing) {
                     textInputSection
                 }
                 
@@ -195,11 +195,11 @@ struct AddQuoteSheet: View {
                     ProgressView()
                         .scaleEffect(1.5)
                     
-                    Text("Detecting underlined text...")
+                    Text("Analyzing image with AI...")
                         .font(.headline)
                         .foregroundColor(.secondary)
                     
-                    Text("This may take a few seconds")
+                    Text("Looking for underlined text")
                         .font(.caption)
                         .foregroundColor(.secondary)
                 }
@@ -208,7 +208,7 @@ struct AddQuoteSheet: View {
             }
         }
         // No image selected yet - show capture buttons
-        else if quoteText.isEmpty {
+        else if selectedImage == nil {
             Section {
                 VStack(spacing: 16) {
                     // Camera button (if available)
@@ -275,7 +275,7 @@ struct AddQuoteSheet: View {
                             Image(systemName: detected ? "checkmark.circle.fill" : "info.circle.fill")
                                 .foregroundColor(detected ? .green : .orange)
                             
-                            Text(detected ? "Underlined text detected" : "No underlines detected - showing all text")
+                            Text(detected ? "Underlined text extracted" : "No underlined text found")
                                 .font(.caption)
                                 .foregroundColor(.secondary)
                         }
