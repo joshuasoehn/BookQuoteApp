@@ -77,6 +77,7 @@ struct QuotesListView: View {
                     }
                 }
                 .listStyle(.plain)
+                .contentMargins(.top, 142, for: .scrollContent)
             }
         }
     }

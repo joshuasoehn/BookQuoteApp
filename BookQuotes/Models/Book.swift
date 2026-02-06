@@ -23,6 +23,13 @@ final class Book {
     /// When this book was added to the library
     var dateAdded: Date
     
+    /// Optional cover image stored as Data
+    @Attribute(.externalStorage)
+    var coverImageData: Data?
+    
+    /// Optional URL for fetching cover image (e.g., from Open Library)
+    var coverImageURL: String?
+    
     /// All quotes saved from this book.
     /// The cascade delete rule means when a book is deleted, all its quotes are also deleted.
     /// The inverse parameter links this back to Quote.book for bidirectional relationship.
@@ -35,10 +42,12 @@ final class Book {
     /// - Parameters:
     ///   - title: The book's title
     ///   - author: The book's author
+    ///   - coverImageURL: Optional URL for the book cover image
     ///   - dateAdded: When the book was added (defaults to now)
-    init(title: String, author: String, dateAdded: Date = Date()) {
+    init(title: String, author: String, coverImageURL: String? = nil, dateAdded: Date = Date()) {
         self.title = title
         self.author = author
+        self.coverImageURL = coverImageURL
         self.dateAdded = dateAdded
     }
 }

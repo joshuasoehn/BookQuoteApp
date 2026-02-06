@@ -20,15 +20,18 @@ struct BookCarouselView: View {
     
     /// Callback when the add button is tapped
     let onAddBook: () -> Void
-    
+
+    /// Callback when the user deletes a book (e.g. from context menu)
+    let onDeleteBook: (Book) -> Void
+
     // MARK: - Body
-    
+
     var body: some View {
         ScrollView(.horizontal, showsIndicators: false) {
             HStack(spacing: 12) {
                 // "Add Book" button as the first item
                 AddBookButton(action: onAddBook)
-                
+
                 // All book cards
                 ForEach(books) { book in
                     BookCardView(
@@ -38,14 +41,26 @@ struct BookCarouselView: View {
                             withAnimation(.spring(response: 0.3, dampingFraction: 0.7)) {
                                 selectedBook = book
                             }
-                        }
+                        },
+                        onDelete: { onDeleteBook(book) }
                     )
                 }
             }
             .padding(.horizontal, 16)
             .padding(.vertical, 16)
         }
-        .background(Color(.systemBackground))
+        .scrollContentBackground(.hidden)
+        .background(
+            LinearGradient(
+                stops: [
+                    .init(color: .white.opacity(0.9), location: 0),
+                    .init(color: .white.opacity(0.9), location: 0.9),
+                    .init(color: .white.opacity(0), location: 1)
+                ],
+                startPoint: .top,
+                endPoint: .bottom
+            )
+        )
     }
 }
 
@@ -88,7 +103,8 @@ struct AddBookButton: View {
     return BookCarouselView(
         books: sampleBooks,
         selectedBook: .constant(sampleBooks[0]),
-        onAddBook: { print("Add book tapped") }
+        onAddBook: { print("Add book tapped") },
+        onDeleteBook: { _ in }
     )
     .background(Color(.systemGray6))
 }

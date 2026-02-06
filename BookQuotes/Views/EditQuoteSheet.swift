@@ -70,6 +70,7 @@ struct EditQuoteSheet: View {
                                 .foregroundColor(.secondary)
                             Spacer()
                             Text(book.title)
+                                .lineLimit(3)
                                 .foregroundColor(.primary)
                         }
                     } header: {

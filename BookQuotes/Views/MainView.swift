@@ -31,45 +31,74 @@ struct MainView: View {
     /// Controls whether the "Add Book" sheet is shown
     @State private var showingAddBook = false
     
-    /// Controls whether the "Add Quote" sheet is shown
-    @State private var showingAddQuote = false
-    
     /// The quote being edited (nil when not editing)
     /// Using this as the item for .sheet(item:) presentation
     @State private var quoteToEdit: Quote?
     
+    /// The active image picker source for adding a quote (nil when not showing)
+    @State private var quoteImagePickerSource: ImagePickerSource?
+    
+    /// Data for presenting the add quote sheet (nil when not showing)
+    @State private var addQuoteData: AddQuoteData?
+
+    /// Book pending delete confirmation (nil when no alert)
+    @State private var bookToDelete: Book?
+
     // MARK: - Body
     
     var body: some View {
-        ZStack {
-            // Main content
-            VStack(spacing: 0) {
-                // Book carousel at the top
-                BookCarouselView(
-                    books: books,
-                    selectedBook: $selectedBook,
-                    onAddBook: { showingAddBook = true }
-                )
-                
-                // Quotes list fills remaining space
-                QuotesListView(
-                    selectedBook: selectedBook,
-                    onEdit: { quote in
-                        quoteToEdit = quote
-                    },
-                    onDelete: { quote in
-                        deleteQuote(quote)
-                    }
-                )
-            }
+        ZStack(alignment: .top) {
+            // Quotes list as full-screen background (scrolls underneath carousel)
+            QuotesListView(
+                selectedBook: selectedBook,
+                onEdit: { quote in
+                    quoteToEdit = quote
+                },
+                onDelete: { quote in
+                    deleteQuote(quote)
+                }
+            )
             
-            // Floating "Add Quote" button (only visible when a book is selected)
+            // Book carousel overlays on top with gradient fade
+            BookCarouselView(
+                books: books,
+                selectedBook: $selectedBook,
+                onAddBook: { showingAddBook = true },
+                onDeleteBook: { book in
+                    bookToDelete = book
+                }
+            )
+            
+            // Floating "Add Quote" button with pop-up menu (only visible when a book is selected)
             if selectedBook != nil {
                 VStack {
                     Spacer()
                     
-                    Button {
-                        showingAddQuote = true
+                    Menu {
+                        // Take Photo option (only if camera is available)
+                        if UIImagePickerController.isSourceTypeAvailable(.camera) {
+                            Button {
+                                quoteImagePickerSource = .camera
+                            } label: {
+                                Label("Take Photo", systemImage: "camera")
+                            }
+                        }
+                        
+                        // Choose Photo option
+                        Button {
+                            quoteImagePickerSource = .photoLibrary
+                        } label: {
+                            Label("Choose Photo", systemImage: "photo.on.rectangle")
+                        }
+                        
+                        // Add Manually option
+                        Button {
+                            if let book = selectedBook {
+                                addQuoteData = AddQuoteData(book: book, mode: .manual)
+                            }
+                        } label: {
+                            Label("Add Manually", systemImage: "square.and.pencil")
+                        }
                     } label: {
                         HStack(spacing: 8) {
                             Image(systemName: "camera.fill")
@@ -89,13 +118,15 @@ struct MainView: View {
                                 )
                         )
                         .clipShape(Capsule())
+                        // Composite the view before applying shadow to prevent Menu clipping
+                        .compositingGroup()
                         // Stronger drop shadow
                         .shadow(color: .black.opacity(0.15), radius: 20, x: 0, y: 8)
                         .shadow(color: .black.opacity(0.1), radius: 6, x: 0, y: 2)
+                        // Add padding so shadow has room to render
+                        .padding(24)
                     }
-                    .buttonStyle(SubtlePressButtonStyle())
-                    // Position near bottom where tab bar usually is
-                    .padding(.bottom, 16)
+                    .padding(-24) // Offset the padding so button position stays the same
                 }
                 .ignoresSafeArea(.keyboard, edges: .bottom)
             }
@@ -113,28 +144,88 @@ struct MainView: View {
                 selectedBook = newBooks.first
             }
         }
+        .alert("Delete Book?", isPresented: Binding(
+            get: { bookToDelete != nil },
+            set: { if !$0 { bookToDelete = nil } }
+        )) {
+            Button("Cancel", role: .cancel) {
+                bookToDelete = nil
+            }
+            Button("Delete", role: .destructive) {
+                if let book = bookToDelete {
+                    deleteBook(book)
+                    bookToDelete = nil
+                }
+            }
+        } message: {
+            if let book = bookToDelete {
+                Text("“\(book.title)” and all its quotes will be removed.")
+            }
+        }
         // MARK: - Sheets
         .sheet(isPresented: $showingAddBook) {
-            AddBookSheet()
+            AddBookSheet(onBookAdded: { book in
+                selectedBook = book
+            })
         }
-        .sheet(isPresented: $showingAddQuote) {
-            // Only present if we have a selected book
-            if let book = selectedBook {
-                AddQuoteSheet(book: book)
-            }
+        .sheet(item: $addQuoteData) { data in
+            AddQuoteSheet(book: data.book, initialMode: data.mode, initialImage: data.image)
         }
         .sheet(item: $quoteToEdit) { quote in
             EditQuoteSheet(quote: quote)
         }
+        // Image picker for camera/photo library
+        .fullScreenCover(item: $quoteImagePickerSource) { source in
+            ImagePickerView(
+                sourceType: source.sourceType,
+                onImageSelected: { image in
+                    quoteImagePickerSource = nil
+                    // Trigger the add quote sheet after a brief delay to allow picker to dismiss
+                    if let book = selectedBook {
+                        DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
+                            addQuoteData = AddQuoteData(book: book, mode: .camera, image: image)
+                        }
+                    }
+                },
+                onCancel: {
+                    quoteImagePickerSource = nil
+                }
+            )
+            .ignoresSafeArea()
+        }
     }
     
     // MARK: - Actions
-    
+
+    /// Deletes a book and all its quotes from the database
+    private func deleteBook(_ book: Book) {
+        withAnimation {
+            modelContext.delete(book)
+        }
+    }
+
     /// Deletes a quote from the database
     private func deleteQuote(_ quote: Quote) {
         withAnimation {
             modelContext.delete(quote)
         }
+    }
+}
+
+// MARK: - Add Quote Data
+
+/// Data wrapper for presenting the add quote sheet
+/// Holds the book, mode, and optional image together to avoid race conditions
+struct AddQuoteData: Identifiable {
+    let id = UUID()
+    let book: Book
+    let mode: QuoteInputMode
+    let image: UIImage?
+    
+    init(book: Book, mode: QuoteInputMode, image: UIImage? = nil) {
+        self.book = book
+        self.mode = mode
+        self.image = image
     }
 }
 
@@ -152,7 +243,56 @@ struct SubtlePressButtonStyle: ButtonStyle {
 
 // MARK: - Preview
 
-#Preview {
+#Preview("With Sample Data") {
+    let container = try! ModelContainer(
+        for: Book.self, Quote.self,
+        configurations: ModelConfiguration(isStoredInMemoryOnly: true)
+    )
+    
+    // Book 1: The Great Gatsby
+    let gatsby = Book(
+        title: "The Great Gatsby",
+        author: "F. Scott Fitzgerald",
+        coverImageURL: "https://covers.openlibrary.org/b/isbn/9780743273565-M.jpg"
+    )
+    container.mainContext.insert(gatsby)
+    gatsby.quotes = [
+        Quote(text: "So we beat on, boats against the current, borne back ceaselessly into the past.", pageNumber: 180),
+        Quote(text: "I hope she'll be a fool — that's the best thing a girl can be in this world, a beautiful little fool.", pageNumber: 17),
+        Quote(text: "In my younger and more vulnerable years my father gave me some advice that I've been turning over in my mind ever since.", pageNumber: 1)
+    ]
+    
+    // Book 2: 1984
+    let nineteenEightyFour = Book(
+        title: "1984",
+        author: "George Orwell",
+        coverImageURL: "https://covers.openlibrary.org/b/isbn/9780451524935-M.jpg"
+    )
+    container.mainContext.insert(nineteenEightyFour)
+    nineteenEightyFour.quotes = [
+        Quote(text: "War is peace. Freedom is slavery. Ignorance is strength.", pageNumber: 4),
+        Quote(text: "Big Brother is watching you.", pageNumber: 2),
+        Quote(text: "Who controls the past controls the future. Who controls the present controls the past.", pageNumber: 34)
+    ]
+    
+    // Book 3: To Kill a Mockingbird
+    let mockingbird = Book(
+        title: "To Kill a Mockingbird",
+        author: "Harper Lee",
+        coverImageURL: "https://covers.openlibrary.org/b/isbn/9780060935467-M.jpg"
+    )
+    container.mainContext.insert(mockingbird)
+    mockingbird.quotes = [
+        Quote(text: "You never really understand a person until you consider things from his point of view... Until you climb inside of his skin and walk around in it.", pageNumber: 30),
+        Quote(text: "The one thing that doesn't abide by majority rule is a person's conscience.", pageNumber: 105),
+        Quote(text: "People generally see what they look for, and hear what they listen for.", pageNumber: 174)
+    ]
+    
+    return MainView()
+        .modelContainer(container)
+}
+
+#Preview("Empty") {
     MainView()
         .modelContainer(for: [Book.self, Quote.self], inMemory: true)
 }

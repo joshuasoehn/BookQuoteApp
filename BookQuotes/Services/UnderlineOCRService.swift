@@ -59,18 +59,18 @@ actor UnderlineOCRService {
     
     /// The prompt sent to Claude to extract underlined text
     private let extractionPrompt = """
-        Look at this photo of a book page. Your task is to extract ONLY the text that has pencil underlines drawn beneath it.
+        Look at this photo of a book page. Your task is to extract the text corresponding to pencil underlines, but you must always return full sentences.
         
         Instructions:
         1. Identify any text that has a pencil underline drawn beneath it
-        2. Extract and return ONLY that underlined text
-        3. Preserve the original paragraph structure and line breaks
-        4. Do not include any text that is not underlined
-        5. Do not add any commentary, labels, or explanations - just return the raw underlined text
+        2. For each underline, determine the complete sentence(s) that contain that underlined text. A sentence runs from a capital letter (or start of paragraph) to a period, question mark, exclamation mark, or end of paragraph
+        3. Return the full sentence(s)—never a fragment. If the underline covers only part of a sentence, extend your selection to include the entire sentence. If it spans multiple sentences, include all of those full sentences
+        4. Preserve the original paragraph structure and line breaks
+        5. Do not add any commentary, labels, or explanations—just return the raw text
         
         If you cannot find any underlined text in the image, respond with exactly: [NO_UNDERLINES_FOUND]
         
-        If you find underlined text, return it directly without any prefix or formatting.
+        If you find underlined text, return the full sentence(s) directly without any prefix or formatting.
         """
     
     // MARK: - Public API
